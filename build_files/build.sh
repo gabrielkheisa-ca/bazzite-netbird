@@ -13,8 +13,8 @@ gpgkey=https://pkgs.netbird.io/yum/repodata/repomd.xml.key
 repo_gpgcheck=1
 EOF
 
-# 2. Install NetBird & NetBird UI
-dnf5 install -y --setopt=tsflags=noscripts netbird netbird-ui
+# 2. Install NetBird, NetBird UI, and rclone into the image layer
+dnf5 install -y --setopt=tsflags=noscripts netbird netbird-ui rclone
 
 # 3. Explicitly create the NetBird systemd unit file
 cat <<'EOF' > /usr/lib/systemd/system/netbird.service
