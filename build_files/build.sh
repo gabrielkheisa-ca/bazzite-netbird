@@ -16,10 +16,28 @@ EOF
 # 2. Install NetBird & NetBird UI
 dnf5 install -y --setopt=tsflags=noscripts netbird netbird-ui
 
-# 3. Create systemd preset so systemd enables NetBird on boot automatically
+# 3. Explicitly create the NetBird systemd unit file
+cat <<'EOF' > /usr/lib/systemd/system/netbird.service
+[Unit]
+Description=NetBird daemon
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/netbird service run
+Restart=always
+RestartSec=5
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# 4. Create systemd preset so systemd enables NetBird on boot automatically
 mkdir -p /usr/lib/systemd/system-preset
 echo "enable netbird.service" > /usr/lib/systemd/system-preset/50-netbird.preset
 
-# 4. Clean up cache & temp build files
+# 5. Clean up cache & temp build files
 dnf5 clean all
 rm -rf /tmp/build_files /var/cache/libdnf5/* /var/log/dnf5.log
