@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# 1. Create NetBird yum repository directly (Official NetBird config)
+# 1. Create NetBird repo configuration
 cat <<'EOF' > /etc/yum.repos.d/netbird.repo
 [netbird]
 name=netbird
@@ -13,9 +13,13 @@ gpgkey=https://pkgs.netbird.io/yum/repodata/repomd.xml.key
 repo_gpgcheck=1
 EOF
 
-# 2. Install NetBird (and netbird-ui for Bazzite GNOME app integration)
-# We do standard dnf5 install so RPM places all unit files in /usr/lib/systemd/system/
-dnf5 install -y netbird netbird-ui gtk4 webkitgtk6.0 xdg-utils || dnf5 install -y netbird
+# 2. Install NetBird & GUI
+dnf5 install -y netbird netbird-ui || true
 
-# 3. Enable NetBird service natively for system boot
+# 3. Explicitly install & enable the service so unit files exist
+/usr/bin/netbird service install || true
 systemctl enable netbird.service
+
+# 4. Clean up DNF cache and temporary build files to pass bootc lint cleanly
+dnf5 clean all
+rm -rf /tmp/build_files /var/cache/libdnf5/* /var/log/dnf5.log
