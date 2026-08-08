@@ -22,7 +22,7 @@ cat <<'EOF' > /usr/lib/systemd/system/netbird.service
 Description=NetBird daemon
 After=network.target network-online.target
 Wants=network-online.target
-
+ 
 [Service]
 Type=simple
 ExecStart=/usr/bin/netbird service run
