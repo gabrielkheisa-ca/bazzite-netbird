@@ -13,16 +13,30 @@ gpgkey=https://pkgs.netbird.io/yum/repodata/repomd.xml.key
 repo_gpgcheck=1
 EOF
 
-# 2. Install NetBird, NetBird UI, and rclone into the image layer
-dnf5 install -y --setopt=tsflags=noscripts netbird netbird-ui rclone
+# 2. Install NetBird, NetBird UI, rclone, and KVM Virtualization Stack
+dnf5 install -y --setopt=tsflags=noscripts \
+    netbird \
+    netbird-ui \
+    rclone \
+    libvirt-daemon-kvm \
+    libvirt-client \
+    qemu-kvm \
+    virt-install
 
-# 3. Explicitly create the NetBird systemd unit file
+# 3. Enable libvirtd and NetBird via systemd presets
+mkdir -p /usr/lib/systemd/system-preset
+cat <<'EOF' > /usr/lib/systemd/system-preset/50-custom-services.preset
+enable netbird.service
+enable libvirtd.service
+EOF
+
+# 4. Explicitly create the NetBird systemd unit file
 cat <<'EOF' > /usr/lib/systemd/system/netbird.service
 [Unit]
 Description=NetBird daemon
 After=network.target network-online.target
 Wants=network-online.target
- 
+
 [Service]
 Type=simple
 ExecStart=/usr/bin/netbird service run
@@ -33,10 +47,6 @@ KillMode=process
 [Install]
 WantedBy=multi-user.target
 EOF
-
-# 4. Create systemd preset so systemd enables NetBird on boot automatically
-mkdir -p /usr/lib/systemd/system-preset
-echo "enable netbird.service" > /usr/lib/systemd/system-preset/50-netbird.preset
 
 # 5. Clean up cache & temp build files
 dnf5 clean all
