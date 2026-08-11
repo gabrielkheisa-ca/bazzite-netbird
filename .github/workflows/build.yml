@@ -72,3 +72,50 @@ jobs:
         run: |
           echo "Signing image..."
           cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}
+
+  generate-iso:
+    name: Generate Bootable ISO
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Lowercase Registry and Image Name
+        run: |
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> $GITHUB_ENV
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> $GITHUB_ENV
+        env:
+          IMAGE_NAME: ${{ github.event.repository.name }}
+          IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+
+      - name: Generate ISO
+        uses: JasonN3/build-container-installer@v1.3.0
+        id: isogenerator
+        with:
+          image_name: ${{ env.IMAGE_NAME }}
+          image_repo: ${{ env.IMAGE_REGISTRY }}
+          image_tag: latest
+          variant: 'Silverblue'
+          version: '40'
+          image_signed: false
+          iso_name: ${{ env.IMAGE_NAME }}-latest.iso
+
+      - name: Generate SHA256 Checksum
+        run: |
+          sha256sum "${{ steps.isogenerator.outputs.iso_path }}/${{ steps.isogenerator.outputs.iso_name }}" > "${{ steps.isogenerator.outputs.iso_path }}/${{ steps.isogenerator.outputs.iso_name }}.sha256"
+
+      - name: Upload ISO and Checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.IMAGE_NAME }}-iso
+          path: |
+            ${{ steps.isogenerator.outputs.iso_path }}/${{ steps.isogenerator.outputs.iso_name }}
+            ${{ steps.isogenerator.outputs.iso_path }}/${{ steps.isogenerator.outputs.iso_name }}.sha256
+          if-no-files-found: error
+          retention-days: 14
