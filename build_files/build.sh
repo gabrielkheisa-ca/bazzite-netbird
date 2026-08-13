@@ -18,11 +18,12 @@ dnf5 install -y --setopt=tsflags=noscripts \
     netbird \
     netbird-ui \
     rclone \
+    htop \
     libvirt-daemon-kvm \
     libvirt-client \
     qemu-kvm \
     virt-install
-
+ 
 # 3. Enable libvirtd and NetBird via systemd presets
 mkdir -p /usr/lib/systemd/system-preset
 cat <<'EOF' > /usr/lib/systemd/system-preset/50-custom-services.preset
