@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 
 # 1. Create NetBird yum repository configuration
@@ -14,7 +13,7 @@ repo_gpgcheck=1
 EOF
 
 # 2. Install NetBird, NetBird UI, rclone, and KVM Virtualization Stack
-dnf5 install -y --setopt=tsflags=noscripts \
+dnf5 install -y --nodocs --setopt=tsflags=noscripts \
     netbird \
     netbird-ui \
     rclone \
@@ -26,7 +25,7 @@ dnf5 install -y --setopt=tsflags=noscripts \
 
 # 3. Enable libvirtd and NetBird via systemd presets
 mkdir -p /usr/lib/systemd/system-preset
-cat <<'EOF' > /usr/lib/systemd/system-preset/50-custom-services.preset
+cat <<'EOF' > /usr/lib/systemd/system-preset/99-custom-services.preset
 enable netbird.service
 enable libvirtd.service
 EOF
@@ -49,6 +48,21 @@ KillMode=process
 WantedBy=multi-user.target
 EOF
 
-# 5. Clean up cache & temp build files
+# 5. Define transient /var state via systemd-tmpfiles (Prevents bootc lint warnings)
+mkdir -p /usr/lib/tmpfiles.d
+cat <<'EOF' > /usr/lib/tmpfiles.d/custom-build.conf
+d /var/cache/libvirt 0711 root root - -
+d /var/cache/libvirt/qemu 0750 root root - -
+EOF
+
+# 6. Comprehensive cleanup to prevent 30-minute COMMIT bottlenecks
 dnf5 clean all
-rm -rf /tmp/build_files /var/cache/libdnf5/* /var/log/dnf5.log
+rm -rf \
+    /etc/yum.repos.d/netbird.repo \
+    /var/cache/libdnf5/* \
+    /var/lib/dnf/* \
+    /var/log/dnf* \
+    /run/dnf \
+    /run/gluster \
+    /tmp/* \
+    /var/tmp/*
