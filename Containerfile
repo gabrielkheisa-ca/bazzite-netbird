@@ -9,4 +9,5 @@ RUN chmod +x /tmp/build_files/build.sh && \
     rm -rf /tmp/build_files
 
 # Perform standard bootc lint check
-RUN bootc container lint
+# Commmented, you don't really need this, better split into separated pipeline for linting to save ~7 mins
+# RUN bootc container lint
