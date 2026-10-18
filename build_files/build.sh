@@ -17,6 +17,7 @@ dnf5 install -y --nodocs --setopt=tsflags=noscripts \
     netbird \
     netbird-ui \
     iotop-c \
+    ncdu \
     rclone \
     htop \
     libvirt-daemon-kvm \
